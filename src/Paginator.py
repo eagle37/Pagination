@@ -148,4 +148,4 @@ class Simple(discord.ui.View):
 
 class SimplePaginatorPageCounter(discord.ui.Button):
     def __init__(self, style: discord.ButtonStyle, TotalPages, InitialPage):
-        super().__init__(label=f"{InitialPage + 1}/{TotalPages}", style=style, disabled=True)
+        super().__init__(label=f"{InitialPage + 1}/{TotalPages}", style=style, disabled=False)
