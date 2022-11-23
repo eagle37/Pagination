@@ -30,11 +30,15 @@ class Simple(discord.ui.View):
                  NextButton: discord.ui.Button = discord.ui.Button(emoji=discord.PartialEmoji(name="\U000025b6")),
                  PageCounterStyle: discord.ButtonStyle = discord.ButtonStyle.grey,
                  InitialPage: int = 0, AllowExtInput: bool = False,
-                 ephemeral: bool = False) -> None:
+                 ephemeral: bool = False, 
+                 FirstButton: discord.ui.Button = discord.ui.Button(emoji=discord.PartialEmoji(name="\U000023ee")), 
+                 LastButton: discord.ui.Button = discord.ui.Button(emoji=discord.PartialEmoji(name="\U000023ed"))) -> None:
         self.PreviousButton = PreviousButton
         self.NextButton = NextButton
         self.PageCounterStyle = PageCounterStyle
         self.InitialPage = InitialPage
+        self.FirstButton = FirstButton
+        self.LastButton = LastButton
         self.AllowExtInput = AllowExtInput
         self.ephemeral = ephemeral
         
@@ -56,17 +60,20 @@ class Simple(discord.ui.View):
         self.total_page_count = len(pages)
         self.ctx = ctx
         self.current_page = self.InitialPage
-
+        self.FirstButton.callback = self.first_button_callback
         self.PreviousButton.callback = self.previous_button_callback
         self.NextButton.callback = self.next_button_callback
+        self.LastButton.callback = self.last_button_callback
 
         self.page_counter = SimplePaginatorPageCounter(style=self.PageCounterStyle,
                                                        TotalPages=self.total_page_count,
                                                        InitialPage=self.InitialPage)
-
+        self.page_counter.callback = self.delete_button_callback
+        self.add_item(self.FirstButton)
         self.add_item(self.PreviousButton)
         self.add_item(self.page_counter)
         self.add_item(self.NextButton)
+        self.add_item(self.LastButton)
 
         self.message = await ctx.send(embed=self.pages[self.InitialPage], view=self, ephemeral=self.ephemeral)
 
@@ -78,6 +85,17 @@ class Simple(discord.ui.View):
 
         self.page_counter.label = f"{self.current_page + 1}/{self.total_page_count}"
         await self.message.edit(embed=self.pages[self.current_page], view=self)
+
+    async def first(self):
+        self.current_page = 0
+        await self.message.edit(embed=self.pages[self.current_page], view=self)
+
+    async def first(self):
+        self.current_page = len(self.pages) - 1
+        await self.message.edit(embed=self.pages[self.current_page], view=self)
+
+    async def del_crow(self):
+        await self.message.delete()
 
     async def next(self):
         if self.current_page == self.total_page_count - 1:
@@ -103,8 +121,30 @@ class Simple(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await self.previous()
         await interaction.response.defer()
+    async def first_button_callback(self, interaction: discord.Interaction):
+        if interaction.user != self.ctx.author and self.AllowExtInput:
+            embed = discord.Embed(description="You cannot control this pagination because you did not execute it.",
+                                  color=discord.Colour.red())
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self.first()
+        await interaction.response.defer()
 
+    async def last_button_callback(self, interaction: discord.Interaction):
+        if interaction.user != self.ctx.author and self.AllowExtInput:
+            embed = discord.Embed(description="You cannot control this pagination because you did not execute it.",
+                                  color=discord.Colour.red())
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self.last()
+        await interaction.response.defer()
 
+    async def delete_button_callback(self, interaction: discord.Interaction):
+        if interaction.user != self.ctx.author and self.AllowExtInput:
+            embed = discord.Embed(description="You cannot control this pagination because you did not execute it.",
+                                  color=discord.Colour.red())
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self.del_crow()
+        await interaction.response.defer()
+    
 
 class SimplePaginatorPageCounter(discord.ui.Button):
     def __init__(self, style: discord.ButtonStyle, TotalPages, InitialPage):
